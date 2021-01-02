@@ -32,10 +32,19 @@ function loadConfig() {
 
 var config = loadConfig();
 
-function authenticate(code, cb) {
+function authenticate(code, client_id, cb) {
+  const client_ids = config.oauth_client_id.split(',');
+  const index_of_client = client_ids.indexOf(client_id);
+  if (index_of_client === -1) {
+    cb('Unauthorized');
+    return;
+  }
+
+  const client_secret = config.oauth_client_secret.split(',')[index_of_client];
+
   var data = qs.stringify({
-    client_id: config.oauth_client_id,
-    client_secret: config.oauth_client_secret,
+    client_id: client_id,
+    client_secret: client_secret,
     code: code
   });
 
@@ -82,7 +91,6 @@ function log(label, value, sanitized) {
   }
 }
 
-
 // Convenience for allowing CORS on routes - GET only
 app.all('*', function (req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
@@ -91,20 +99,27 @@ app.all('*', function (req, res, next) {
   next();
 });
 
+function respond_to_authentication(res, err, token) {
+  var result
+  if (err || !token) {
+    result = {"error": err || "bad_code"};
+    log(result.error);
+  } else {
+    result = {"token": token};
+    log("token", result.token, true);
+  }
+  res.json(result);
+}
+
+app.get('/authenticate/:code/client_id/:client_id', function(req, res) {
+  log('authenticating code:', req.params.code, true);
+  authenticate(req.params.code, req.params.client_id, (err, token) => respond_to_authentication(res, err, token));
+});
 
 app.get('/authenticate/:code', function(req, res) {
+  const client_id = config.oauth_client_id.split(',')[0];
   log('authenticating code:', req.params.code, true);
-  authenticate(req.params.code, function(err, token) {
-    var result
-    if ( err || !token ) {
-      result = {"error": err || "bad_code"};
-      log(result.error);
-    } else {
-      result = {"token": token};
-      log("token", result.token, true);
-    }
-    res.json(result);
-  });
+  authenticate(req.params.code, client_id, (err, token) => respond_to_authentication(res, err, token));
 });
 
 module.exports.config = config;
