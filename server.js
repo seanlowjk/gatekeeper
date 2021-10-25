@@ -4,11 +4,18 @@ var url     = require('url'),
     fs      = require('fs'),
     qs      = require('querystring'),
     express = require('express'),
+    moesif  = require('moesif-nodejs'),
     app     = express();
 
 var TRUNCATE_THRESHOLD = 10,
     REVEALED_CHARS = 3,
     REPLACEMENT = '***';
+
+// Use Moesif middleware to log incoming API calls.  
+const moesifMiddleware = moesif({
+  applicationId: process.env.MOESIF_APPLICATION_ID
+});
+app.use(moesifMiddleware);
 
 // Load config defaults from JSON file.
 // Environment variables override defaults.
