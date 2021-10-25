@@ -19,9 +19,6 @@
     "express": "~3.16.0",
     "moesif-nodejs": "~3.0.0"
   },
-  "engines": {
-    "node": "~6.11.1"
-  },
   "main": "index",
   "version": "0.1.0"
 }
